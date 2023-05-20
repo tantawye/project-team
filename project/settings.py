@@ -28,10 +28,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Books',
-    'django_filters',
     'facerecognition',
     'detectobject',
     'rest_framework',
+    'django_filters',
+    
 ]
 
 MIDDLEWARE = [
