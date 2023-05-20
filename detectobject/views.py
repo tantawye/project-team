@@ -18,7 +18,7 @@ def ObjectDetectionView(request):
             command = f'python detect.py --source {default_camera}'
 
             # Run the command to perform object detection
-            result = run(command, shell=True, check=True, cwd=r'detectobject/yolov7', stdout=PIPE, stderr=PIPE)
+            result = run(command, shell=True, check=True, cwd=r'yolov7', stdout=PIPE, stderr=PIPE)
             # Process the output to extract im0 and s
             output_lines = result.stdout.decode().split('\n')
             s = None
