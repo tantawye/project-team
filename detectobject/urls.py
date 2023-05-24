@@ -1,12 +1,5 @@
 from django.urls import path
-
-from .views import api2,ObjectDetectionView2
-
+from.views import ObjectDetectionView
 urlpatterns = [
-    path('',api2),
-    path('s/',ObjectDetectionView2)
-
+    path('', ObjectDetectionView),
 ]
-
-
-

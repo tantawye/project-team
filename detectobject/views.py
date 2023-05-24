@@ -1,94 +1,48 @@
 from django.shortcuts import render
-from subprocess import run , PIPE 
-
-from django.http import JsonResponse ,StreamingHttpResponse
-
+from subprocess import Popen, PIPE
+from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
-
-from django.http import JsonResponse
-import base64,  json
-
-
-
+import base64, json
+import os
 @csrf_exempt
-
 def ObjectDetectionView(request):
-        if request.method == 'POST':
-            default_camera = int(request.POST.get('defaultCameraIndex').strip("'"))
-            command = f'python detect.py --source {default_camera}'
+    if request.method == 'POST':
+        default_camera = int(request.POST.get('defaultCameraIndex').strip("'"))
+        command = f'python detect.py --source {default_camera}'
+        cwd1 = os.path.join(os.getcwd(), 'detectobject', 'yolov7')
 
-            # Run the command to perform object detection
-            result = run(command, shell=True, check=True, cwd=r'detectobject/yolov7', stdout=PIPE, stderr=PIPE)
-            # Process the output to extract im0 and s
-            output_lines = result.stdout.decode().split('\n')
-            s = None
-            base64_str = None
-            for line in output_lines:
+        # Run the command to perform object detection
+        process = Popen(command, shell=True, cwd=cwd1, stdout=PIPE, stderr=PIPE, universal_newlines=True)
+
+        def stream_output():
+            for line in process.stdout:
+                line = line.strip()
                 if line.startswith('seem'):
                     s = line[len('seem'):].strip()
-                if line.startswith('byte'):
-                    base64_str = line[len('byte'):]
+                elif line.startswith('byte'):
+                    base64_str = line[len('byte'):].strip()
+                    yield f"data: {json.dumps({'object_name': s, 'base64_str': base64_str})}\n\n"
 
-            response_data = {
-                's': s,
-                'base64_str': base64_str
-            }
-            return StreamingHttpResponse(json.dumps(response_data) + '\n', content_type='text/event-stream')
-        
-            # return JsonResponse(response_data, safe=False)
-        
-        elif request.method == 'GET':
-            default_camera = request.GET.get('source', '0')
-            command = f'python detect.py --source {default_camera}'
+        return StreamingHttpResponse(stream_output(), content_type='text/event-stream')
 
-            # Run the command to perform object detection
-            result = run(command, shell=True, check=True, cwd=r'detectobject/yolov7', stdout=PIPE, stderr=PIPE)
-
-            # Process the output to extract im0 and s
-            output_lines = result.stdout.decode().split('\n')
-            s = None
-            base64_str = None
-            for line in output_lines:
-                if line.startswith('seem'):
-                    s = line[len('seem'):].strip()
-                if line.startswith('byte'):
-                    base64_str = line[len('byte'):]
-          
-
-            response_data = {
-                's': s,
-                'base64_str': base64_str
-            }
-            return StreamingHttpResponse(json.dumps(response_data) + '\n', content_type='text/event-stream')
-
-        else:
-            return JsonResponse({"status": "error", "message": "Invalid request method."})
-
-
-@csrf_exempt
-def api2(request):
-    return ObjectDetectionView(request)
-
-
-        
-import cv2
-import base64
-@csrf_exempt
-def ObjectDetectionView2(request):
-    if request.method == 'GET':
+    elif request.method == 'GET':
         default_camera = request.GET.get('source', '0')
         command = f'python detect.py --source {default_camera}'
+        cwd1 = os.path.join(os.getcwd(), 'detectobject', 'yolov7')
 
-        # Start the detection process as a subprocess
-        process = run(command, shell=True, cwd=r'detectobject/yolov7', stdout=PIPE, stderr=PIPE, universal_newlines=True)
+        # Run the command to perform object detection
+        process = Popen(command, shell=True, cwd=cwd1, stdout=PIPE, stderr=PIPE, universal_newlines=True)
 
-        def generate_response():
-            for line in process.stdout.split('\n'):
+        def stream_output():
+            for line in process.stdout:
+                line = line.strip()
                 if line.startswith('seem'):
                     s = line[len('seem'):].strip()
-                if line.startswith('byte'):
+                elif line.startswith('byte'):
                     base64_str = line[len('byte'):].strip()
-                    yield json.dumps({'s': s, 'base64_str': base64_str}) + '\n'
+                    yield f"data: {json.dumps({'object_name': s, 'base64_str': base64_str})}\n\n"
 
-        # Return the streaming response with the generated output
-        return StreamingHttpResponse(generate_response(), content_type='text/event-stream')
+        return StreamingHttpResponse(stream_output(), content_type='text/event-stream')
+
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method."})
