@@ -71,3 +71,24 @@ def api2(request):
 
 
         
+import cv2
+import base64
+@csrf_exempt
+def ObjectDetectionView2(request):
+    if request.method == 'GET':
+        default_camera = request.GET.get('source', '0')
+        command = f'python detect.py --source {default_camera}'
+
+        # Start the detection process as a subprocess
+        process = run(command, shell=True, cwd=r'detectobject/yolov7', stdout=PIPE, stderr=PIPE, universal_newlines=True)
+
+        def generate_response():
+            for line in process.stdout.split('\n'):
+                if line.startswith('seem'):
+                    s = line[len('seem'):].strip()
+                if line.startswith('byte'):
+                    base64_str = line[len('byte'):].strip()
+                    yield json.dumps({'s': s, 'base64_str': base64_str}) + '\n'
+
+        # Return the streaming response with the generated output
+        return StreamingHttpResponse(generate_response(), content_type='text/event-stream')

@@ -136,8 +136,8 @@ def detect(save_img=False):
 
             # Stream results
             if view_img:
-                cv2.imshow(str(p), im0)
-                cv2.waitKey(1)  # 1 millisecond
+                #cv2.imshow(str(p), im0)
+                #cv2.waitKey(1)  # 1 millisecond
                 _,jpeg_frame =cv2.imencode('.jpg',im0)
                 jpeg_bytes= jpeg_frame.tobytes()
                 jpeg64 = base64.b64encode(jpeg_bytes)
